@@ -1,4 +1,4 @@
-name: FastAPI CI
+name: FastAPI CI/CD
 
 on:
   push:
@@ -10,9 +10,6 @@ permissions:
 
 jobs:
 
-  # =========================
-  # 1. TEST
-  # =========================
   test:
     runs-on: ubuntu-latest
 
@@ -32,9 +29,6 @@ jobs:
         run: python -m pytest
 
 
-  # =========================
-  # 2. LINT
-  # =========================
   lint:
     runs-on: ubuntu-latest
 
@@ -54,9 +48,6 @@ jobs:
         run: ruff check .
 
 
-  # =========================
-  # 3. BUILD + PUSH DOCKER
-  # =========================
   build:
     needs: [test, lint]
     runs-on: ubuntu-latest
@@ -65,7 +56,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Login to GitHub Container Registry
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -73,12 +63,39 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Build Docker image and push it to GHCR
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
           tags: |
-            ghcr.io/livesh28/fastapi-cicd-lab:latest
-            ghcr.io/livesh28/fastapi-cicd-lab:${{ github.sha }}
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
+
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            sudo docker pull ghcr.io/${{ github.repository }}:latest
+
+            sudo docker stop fastapi-lab || true
+            sudo docker rm fastapi-lab || true
+
+            sudo docker run -d \
+              --name fastapi-lab \
+              --restart unless-stopped \
+              -p 8000:8000 \
+              ghcr.io/${{ github.repository }}:latest
+
+            sleep 5
+
+            curl --fail http://localhost:8000/health
