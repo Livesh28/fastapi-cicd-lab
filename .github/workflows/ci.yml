@@ -69,8 +69,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}:latest
-            ghcr.io/${{ github.repository }}:${{ github.sha }}
+            ghcr.io/livesh28/fastapi-cicd-lab:latest
+            ghcr.io/livesh28/fastapi-cicd-lab:${{ github.sha }}
 
 
   deploy:
@@ -85,7 +85,7 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            sudo docker pull ghcr.io/${{ github.repository }}:latest
+            sudo docker pull ghcr.io/livesh28/fastapi-cicd-lab:latest
 
             sudo docker stop fastapi-lab || true
             sudo docker rm fastapi-lab || true
@@ -94,7 +94,7 @@ jobs:
               --name fastapi-lab \
               --restart unless-stopped \
               -p 8000:8000 \
-              ghcr.io/${{ github.repository }}:latest
+              ghcr.io/livesh28/fastapi-cicd-lab:latest
 
             sleep 5
 
