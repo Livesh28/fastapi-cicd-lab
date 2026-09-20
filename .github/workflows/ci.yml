@@ -73,7 +73,7 @@ jobs:
             ghcr.io/livesh28/fastapi-cicd-lab:${{ github.sha }}
 
 
-      deploy:
+  deploy:
     needs: build
     runs-on: ubuntu-latest
 
@@ -107,6 +107,7 @@ jobs:
             echo "Checking container..."
             sleep 5
             sudo docker ps
+
             curl -f http://localhost:8000/health
 
             echo "Deployment successful!"
