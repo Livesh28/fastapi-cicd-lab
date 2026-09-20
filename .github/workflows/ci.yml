@@ -73,7 +73,7 @@ jobs:
             ghcr.io/livesh28/fastapi-cicd-lab:${{ github.sha }}
 
 
-  deploy:
+      deploy:
     needs: build
     runs-on: ubuntu-latest
 
@@ -85,17 +85,28 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            sudo docker pull ghcr.io/livesh28/fastapi-cicd-lab:latest
+            echo "Logging in to GHCR..."
+            echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
+            echo "Pulling exact image..."
+            sudo docker pull ghcr.io/${{ github.repository }}:${{ github.sha }}
+
+            echo "Stopping old container..."
             sudo docker stop fastapi-lab || true
+
+            echo "Removing old container..."
             sudo docker rm fastapi-lab || true
 
+            echo "Starting new container..."
             sudo docker run -d \
               --name fastapi-lab \
               --restart unless-stopped \
               -p 8000:8000 \
-              ghcr.io/livesh28/fastapi-cicd-lab:latest
+              ghcr.io/${{ github.repository }}:${{ github.sha }}
 
+            echo "Checking container..."
             sleep 5
+            sudo docker ps
+            curl -f http://localhost:8000/health
 
-            curl --fail http://localhost:8000/health
+            echo "Deployment successful!"
