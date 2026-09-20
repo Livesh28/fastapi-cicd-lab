@@ -9,7 +9,7 @@ def test_home():
     response = client.get("/")
 
     assert response.status_code == 200
-    assert response.json() == {"message": "Hello CI/CD"}
+    assert response.json() == {"message": "Hello CI/CD v2"}
 
 
 def test_health():
