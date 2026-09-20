@@ -110,4 +110,4 @@ jobs:
 
             curl -f http://localhost:8000/health
 
-            echo "Deployment successful!"
+            echo "Deployment successfull!"
